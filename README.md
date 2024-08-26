@@ -1,87 +1,108 @@
 # Project: Operationalizing a Coworking Space Microservice
 
-## Overview
-The Coworking Space Service API enables users to request one-time tokens and allows administrators to authorize access to coworking spaces. Following a microservice architecture, this service is deployed and managed independently within a Kubernetes environment. This project focuses on deploying an analytics API that provides business analysts with basic user activity data.
+## Coworking Space Service Extension
 
-## Dependencies
-### Local Environment
-- **Python Environment:** Python 3.6+ for running applications and managing dependencies via `pip`.
-- **Docker CLI:** Required for building and testing Docker images locally.
-- **kubectl:** Essential for interacting with the Kubernetes cluster.
-- **helm:** Used for deploying the PostgreSQL database via Helm Charts.
+The Coworking Space Service is a set of APIs that empower users to request one-time tokens, and administrators to authorize access to a coworking space. This service adheres to the microservice architectural pattern, with distinct services that can be deployed and managed independently.
 
-### Remote Resources
-- **AWS CodeBuild:** To build Docker images remotely.
-- **AWS ECR:** To store Docker images.
-- **AWS EKS:** To deploy and manage Kubernetes clusters.
-- **AWS CloudWatch:** For monitoring application logs and metrics.
-- **GitHub:** For version control and source code management.
+As a DevOps engineer for this project, you'll collaborate with a team developing an API for business analysts. This API provides essential analytics data on user activity within the service. While the application functions correctly in a local environment, your task is to build a pipeline for its deployment in a Kubernetes cluster.
 
-### Setup
+## Getting Started
 
-#### 1. Configure the Database
+### Dependencies
 
-To set up a PostgreSQL database in your Kubernetes cluster, follow these steps:
+#### Local Environment
+1. **Python Environment**: Required to run Python 3.6+ applications and install Python dependencies using `pip`.
+2. **Docker CLI**: Essential for building and running Docker images locally.
+3. **kubectl**: Necessary to execute commands against a Kubernetes cluster.
+4. **helm**: Needed to apply Helm Charts to a Kubernetes cluster.
 
-1. **Add the Bitnami Helm Repository:**
-   ```bash
-   helm repo add <REPO_NAME> https://charts.bitnami.com/bitnami
-   ```
+#### Remote Resources
 
-2. **Install the PostgreSQL Helm Chart:**
-   ```bash
-   helm install <SERVICE_NAME> <REPO_NAME>/postgresql
-   ```
+1. **AWS CodeBuild**: Used for remote Docker image builds.
+2. **AWS ECR**: Hosts Docker images.
+3. **Kubernetes Environment with AWS EKS**: Deploys applications in Kubernetes.
+4. **AWS CloudWatch**: Monitors activity and logs in EKS.
+5. **GitHub**: Pulls and clones the code repository.
 
-   This will deploy a PostgreSQL instance at `<SERVICE_NAME>-postgresql.default.svc.cluster.local` within your Kubernetes cluster. You can verify the deployment by running:
-   ```bash
+
+#### Project Structure
+```shell
+
+├── CODEOWNERS
+├── LICENSE.txt
+├── README.md
+├── analytics
+│   ├── Dockerfile
+│   ├── __init__.py
+│   ├── app.py
+│   ├── config.py
+│   ├── model.py
+│   └── requirements.txt
+├── buildspec.yml
+├── db
+│   ├── 1_create_tables.sql
+│   ├── 2_seed_users.sql
+│   └── 3_seed_tokens.sql
+├── deployment
+│   ├── configmap.yaml
+│   ├── coworking.yaml
+│   └── secret.yaml
+├── deployment-local
+│   ├── configmap.yaml
+│   └── coworking.yaml
+├── screenshots
+│   ├── api.png
+│   ├── api1.png
+│   ├── api2.png
+│   ├── api3.png
+│   ├── cloudwatch.png
+│   ├── codebuild.png
+│   ├── codebuild1.png
+│   ├── describe_deployment.png
+│   ├── describe_svc.png
+│   ├── describe_svc1.png
+│   ├── ecr.png
+│   ├── get_deployment.png
+│   └── logs.png
+└── scripts
+    ├── create_cluster.sh
+    ├── create_ecr.sh
+    └── helm_sql.sh
+```
+
+- `scripts`: Bash scripts to facilitate project tasks.
+- `db`: SQL scripts for seeding data.
+- `deployment`: Kubernetes YAML files for deployment and configuration.
+
+#### How to Run
+
+1. Run `bin/create-cluster.sh`: Create a Kubernetes cluster and update `kubectl` configuration.
+2. Run `bin/helm_sql.sh`: Create a PostgreSQL database service.
+3. Run `bin/deployment.sh`: Deploy using `kubectl`.
+
+### CloudWatch Metrics in EKS
+
+Refer to [CloudWatch Metrics in EKS](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Observability-EKS-addon.html) for more information on CloudWatch metrics in EKS.
+
+### Get Web API URL
+
+To access the Web API, follow these steps:
+
+1. Get the load balancer external IP:
+
+   ```shell
    kubectl get svc
    ```
 
-   By default, this setup will create a `postgres` user. You can retrieve the password with the following command:
-   ```bash
-   export POSTGRES_PASSWORD=$(kubectl get secret --namespace default <SERVICE_NAME>-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
-   echo $POSTGRES_PASSWORD
-   ```
+   ![Kubectl Get SVC](./screenshots/describe_svc.png)
 
-   *(These instructions are adapted from Bitnami's PostgreSQL Helm Chart.)*
+2. Access the Web API using the provided external IP.
 
-3. **Test Database Connection:**
-   The database is accessible within the Kubernetes cluster, but connecting from your local environment may require additional steps. You can either connect via a pod within the cluster or use port forwarding.
+   ![Web API](./screenshots/api.png)
+   ![Web API](./Screenshots/api1.png)
 
-   - **Connecting Via Port Forwarding:**
-     ```bash
-     kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
-     PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432
-     ```
+### CloudWatch
 
-   - **Connecting Via a Pod:**
-     ```bash
-     kubectl exec -it <POD_NAME> bash
-     PGPASSWORD="<PASSWORD HERE>" psql postgres://postgres@<SERVICE_NAME>:5432/postgres -c <COMMAND_HERE>
-     ```
+View metrics and logs in CloudWatch:
 
-4. **Run Seed Files:**
-   To set up the necessary tables and data, run the seed files located in the `db/` directory:
-   ```bash
-   kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
-   PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432 < <FILE_NAME.sql>
-   ```
-
-
-## Deployment Process
-1. **Database Setup:** A PostgreSQL database is deployed in the Kubernetes cluster using a Helm Chart. The database is initialized with seed data to support the application.
-2. **Dockerization:** The Python-based analytics application is containerized using a Dockerfile. This image is built and pushed to AWS ECR using a CI/CD pipeline configured in AWS CodeBuild.
-3. **Kubernetes Deployment:** The application is deployed using Kubernetes configurations that define services, deployments, and ConfigMaps. These configurations ensure the application is scalable and resilient.
-4. **Monitoring:** AWS CloudWatch is utilized for monitoring logs and performance metrics, ensuring the application operates smoothly.
-
-## Key Deliverables
-- **Dockerfile:** Configured to use a Python base image and optimized for the application.
-- **Build Pipeline:** A CodeBuild pipeline that builds the Docker image and pushes it to ECR.
-- **Kubernetes Configurations:** YAML files for deploying the application in EKS.
-- **Monitoring:** Application logs and metrics available in CloudWatch for tracking performance and issues.
-
-## Stand Out Suggestions
-1. **Memory and CPU Allocation:** Reasonable memory and CPU allocations are specified in the Kubernetes deployment files to optimize resource usage and ensure application stability.
-2. **AWS Instance Type Recommendation:** For this application, an `m5.large` instance type is recommended due to its balanced compute, memory, and network performance, which is suitable for running microservices like the analytics API.
-3. **Cost Savings Consideration:** To save on costs, consider using spot instances in non-critical environments, reducing the size of the Kubernetes cluster during off-peak hours, and optimizing the Docker image to reduce build times and storage costs.
+![CloudWatch](./screenshots/cloudwatch.png)
