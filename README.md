@@ -2,9 +2,9 @@
 
 ## Coworking Space Service Extension
 
-The Coworking Space Service is a set of APIs that empower users to request one-time tokens, and administrators to authorize access to a coworking space. This service adheres to the microservice architectural pattern, with distinct services that can be deployed and managed independently.
+The Coworking Space Service comprises a suite of APIs that enable users to request one-time tokens and allow administrators to manage access to coworking spaces. Following a microservice architecture, each service is designed to be deployed and managed independently.
 
-As a DevOps engineer for this project, you'll collaborate with a team developing an API for business analysts. This API provides essential analytics data on user activity within the service. While the application functions correctly in a local environment, your task is to build a pipeline for its deployment in a Kubernetes cluster.
+In this project, as the DevOps engineer, you will collaborate with a team responsible for developing an API that delivers key analytics on user activity within the service. Although the application runs smoothly in a local environment, your primary task is to create a pipeline for its deployment in a Kubernetes cluster.
 
 ## Getting Started
 
