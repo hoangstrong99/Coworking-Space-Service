@@ -99,7 +99,7 @@ To access the Web API, follow these steps:
 2. Access the Web API using the provided external IP.
 
    ![Web API](./screenshots/api.png)
-   ![Web API](./Screenshots/api1.png)
+   ![Web API](./screenshots/api1.png)
 
 ### CloudWatch
 
