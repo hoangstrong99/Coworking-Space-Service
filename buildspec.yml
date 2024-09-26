@@ -1,7 +1,7 @@
 version: 0.2
 env:
   variables:
-    IMAGE_REPO_NAME: project3-repo
+    IMAGE_REPO_NAME: pr3-repository
     IMAGE_TAG: latest
 phases:
   pre_build:
